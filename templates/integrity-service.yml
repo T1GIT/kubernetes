@@ -1,0 +1,77 @@
+# Сервис контроля целостности пакетов и база данных для хешей пакетов.
+# Использует NodeJS приложение и MongoDB для хранения данных.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: security-ns
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: integrity-pvc
+  namespace: security-ns
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: integrity-service
+  namespace: security-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: integrity-service
+  template:
+    metadata:
+      labels:
+        app: integrity-service
+    spec:
+      containers:
+        - name: integrity-service-app
+          image: node:20-alpine
+          command: ["node", "-e", "console.log('Integrity Service is running'); setInterval(()=>{}, 3600000)"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: host-integrity-service
+              mountPath: /host
+        - name: integrity-db
+          image: mongo:latest
+          volumeMounts:
+            - name: integrity-db-data
+              mountPath: /data/db
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+      volumes:
+        - name: integrity-db-data
+          persistentVolumeClaim:
+            claimName: integrity-pvc
+        - name: host-integrity-service
+          hostPath:
+            path: /Users/dderbin/Desktop/virt-demo/host/integrity-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: integrity-service
+  namespace: security-ns
+spec:
+  selector:
+    app: integrity-service
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      name: http

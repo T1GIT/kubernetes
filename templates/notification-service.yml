@@ -1,0 +1,47 @@
+# Сервис отправки уведомлений о нарушениях.
+# Использует NodeJS приложение.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: security-ns
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: security-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service-app
+          image: node:20-alpine
+          command: ["node", "-e", "console.log('Notification Service is running'); setInterval(()=>{}, 3600000)"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: security-ns
+spec:
+  selector:
+    app: notification-service
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30081

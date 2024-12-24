@@ -1,0 +1,46 @@
+# Сервис клиента журнала нарушений.
+# Использует Nginx для статики.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: security-ns
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audit-client
+  namespace: security-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: audit-client
+  template:
+    metadata:
+      labels:
+        app: audit-client
+    spec:
+      containers:
+        - name: audit-client-app
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-client
+  namespace: security-ns
+spec:
+  selector:
+    app: audit-client
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30080
