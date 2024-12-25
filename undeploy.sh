@@ -3,6 +3,13 @@
 # Имя namespace
 NAMESPACE="security-ns"
 
+# Удаление Prometheus
+echo "Удаление Prometheus..."
+helm uninstall prometheus -n "$NAMESPACE"
+
+# Удаление Grafana
+echo "Удаление Grafana..."
+helm uninstall grafana -n "$NAMESPACE"
 # Вывод сообщения
 echo "Удаление сервисов из namespace $NAMESPACE..."
 
@@ -13,14 +20,6 @@ kubectl delete -f templates/config-service.yml --namespace "$NAMESPACE"
 kubectl delete -f templates/notification-service.yml --namespace "$NAMESPACE"
 kubectl delete -f templates/audit-log-service.yml --namespace "$NAMESPACE"
 kubectl delete -f templates/audit-client.yml --namespace "$NAMESPACE"
-
-# Удаление Prometheus
-echo "Удаление Prometheus..."
-helm uninstall prometheus -n "$NAMESPACE"
-
-# Удаление Grafana
-echo "Удаление Grafana..."
-helm uninstall grafana -n "$NAMESPACE"
 
 # Удаление namespace
 echo "Удаление namespace $NAMESPACE..."
