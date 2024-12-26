@@ -60,7 +60,7 @@ spec:
             claimName: integrity-pvc
         - name: host-integrity-service
           hostPath:
-            path: /Users/dderbin/Desktop/virt-demo/host/integrity-service
+            path: /Users/dderbin/Desktop/kubernetes/host/integrity-service
 ---
 apiVersion: v1
 kind: Service

@@ -60,7 +60,7 @@ spec:
             claimName: config-pvc
         - name: host-config-service
           hostPath:
-            path: /Users/dderbin/Desktop/virt-demo/host/config-service
+            path: /Users/dderbin/Desktop/kubernetes/host/config-service
 ---
 apiVersion: v1
 kind: Service

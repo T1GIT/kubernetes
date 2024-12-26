@@ -60,7 +60,7 @@ spec:
             claimName: registry-pvc
         - name: host-registry-service
           hostPath:
-            path: /Users/dderbin/Desktop/virt-demo/host/registry-service
+            path: /Users/dderbin/Desktop/kubernetes/host/registry-service
 ---
 apiVersion: v1
 kind: Service
