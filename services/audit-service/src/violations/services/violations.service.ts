@@ -16,6 +16,10 @@ export class ViolationsService {
     @InjectModel(Violation.name) private violationModel: Model<Violation>,
   ) {}
 
+  async getAll(): Promise<ViolationDocument[]> {
+    return this.violationModel.find().exec();
+  }
+
   async save(
     external: ViolationExternal,
     type: ViolationType,
