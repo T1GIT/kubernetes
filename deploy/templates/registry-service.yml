@@ -1,14 +1,9 @@
-# Сервис контроля целостности пакетов и база данных для хешей пакетов.
+# Сервис контроля установки пакетов и база данных реестра пакетов.
 # Использует NodeJS приложение и MongoDB для хранения данных.
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: security-ns
----
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: integrity-pvc
+  name: registry-pvc
   namespace: security-ns
 spec:
   accessModes:
@@ -20,56 +15,56 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: integrity-service
+  name: registry-service
   namespace: security-ns
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: integrity-service
+      app: registry-service
   template:
     metadata:
       labels:
-        app: integrity-service
+        app: registry-service
     spec:
       containers:
-        - name: integrity-service-app
+        - name: registry-service-app
           image: node:20-alpine
-          command: ["node", "-e", "console.log('Integrity Service is running'); setInterval(()=>{}, 3600000)"]
-          resources:
-            requests:
-              cpu: 100m
-              memory: 512Mi
-          ports:
-            - containerPort: 8080
-          volumeMounts:
-            - name: host-integrity-service
-              mountPath: /host
-        - name: integrity-db
-          image: mongo:latest
-          volumeMounts:
-            - name: integrity-db-data
-              mountPath: /data/db
+          command: ["node", "-e", "console.log('Registry Service is running'); setInterval(()=>{}, 3600000)"]
           resources:
             requests:
               cpu: 100m
               memory: 256Mi
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: host-registry-service
+              mountPath: /host
+        - name: registry-db
+          image: mongo:latest
+          volumeMounts:
+            - name: registry-db-data
+              mountPath: /data/db
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
       volumes:
-        - name: integrity-db-data
+        - name: registry-db-data
           persistentVolumeClaim:
-            claimName: integrity-pvc
-        - name: host-integrity-service
+            claimName: registry-pvc
+        - name: host-registry-service
           hostPath:
-            path: /Users/dderbin/Desktop/kubernetes/host/integrity-service
+            path: /Users/dderbin/Desktop/kubernetes/host
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: integrity-service
+  name: registry-service
   namespace: security-ns
 spec:
   selector:
-    app: integrity-service
+    app: registry-service
   ports:
     - protocol: TCP
       port: 8080

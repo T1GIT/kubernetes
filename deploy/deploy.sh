@@ -23,12 +23,14 @@ helm install grafana grafana/grafana --namespace "$NAMESPACE"
 kubectl expose service grafana --type=NodePort --target-port=3000 --name=grafana-np --namespace "$NAMESPACE"
 
 # Применение YAML-файлов для развертывания сервисов
-kubectl apply -f templates/registry-service.yml --namespace "$NAMESPACE"
-kubectl apply -f templates/integrity-service.yml --namespace "$NAMESPACE"
-kubectl apply -f templates/config-service.yml --namespace "$NAMESPACE"
-kubectl apply -f templates/notification-service.yml --namespace "$NAMESPACE"
-kubectl apply -f templates/audit-log-service.yml --namespace "$NAMESPACE"
-kubectl apply -f templates/audit-client.yml --namespace "$NAMESPACE"
+kubectl apply -f ./templates/namespace.yml
+kubectl apply -f ./templates/redis.yml --namespace "$NAMESPACE"
+kubectl apply -f ./templates/config-service.yml --namespace "$NAMESPACE"
+#kubectl apply -f ./templates/registry-service.yml --namespace "$NAMESPACE"
+#kubectl apply -f ./templates/integrity-service.yml --namespace "$NAMESPACE"
+#kubectl apply -f ./templates/notification-service.yml --namespace "$NAMESPACE"
+kubectl apply -f ./templates/audit-service.yml --namespace "$NAMESPACE"
+#kubectl apply -f ./templates/audit-client.yml --namespace "$NAMESPACE"
 
 # Сообщение об успешном развертывании
 echo "Все сервисы успешно развернуты в namespace $NAMESPACE!"

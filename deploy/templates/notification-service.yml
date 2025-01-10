@@ -1,10 +1,5 @@
 # Сервис отправки уведомлений о нарушениях.
 # Использует NodeJS приложение.
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: security-ns
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:

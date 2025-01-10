@@ -1,10 +1,5 @@
 # Сервис клиента журнала нарушений.
 # Использует Nginx для статики.
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: security-ns
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
