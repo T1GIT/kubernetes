@@ -1,0 +1,123 @@
+# Сервис записи актов нарушений и база данных для журнала нарушений.
+# Использует NodeJS приложение и ElasticSearch для хранения данных.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: audit-pvc
+  namespace: security-ns
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audit-service
+  namespace: security-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: audit-service
+  template:
+    metadata:
+      labels:
+        app: audit-service
+    spec:
+      containers:
+        - name: audit-service-app
+          image: docker.io/t1mondocker/audit-service
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: MONGO_HOST
+              value: "audit-db-service"
+            - name: MONGO_PORT
+              value: "27017"
+            - name: MONGO_NAME
+              value: "audit-db"
+            - name: REDIS_HOST
+              value: "redis-service"
+            - name: REDIS_PORT
+              value: "6379"
+        - name: audit-db
+          image: mongo:latest
+          volumeMounts:
+            - name: audit-db-data
+              mountPath: /data/db
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+        - name: audit-db-express
+          image: mongo-express:latest
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          ports:
+            - containerPort: 8081
+          env:
+            - name: ME_CONFIG_MONGODB_SERVER
+              value: "audit-db-service"
+            - name: ME_CONFIG_MONGODB_PORT
+              value: "27017"
+            - name: ME_CONFIG_BASICAUTH_USERNAME
+              value: "admin"
+            - name: ME_CONFIG_BASICAUTH_PASSWORD
+              value: "admin"
+      volumes:
+        - name: audit-db-data
+          persistentVolumeClaim:
+            claimName: audit-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-service
+  namespace: security-ns
+spec:
+  selector:
+    app: audit-service
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-db-service
+  namespace: security-ns
+spec:
+  selector:
+    app: audit-service
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+      name: mongodb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-db-express-service
+  namespace: security-ns
+spec:
+  selector:
+    app: audit-service
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081
+      name: mongodb-express
