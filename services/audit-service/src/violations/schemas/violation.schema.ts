@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { ViolationType } from '@/violations/constants/violation-type';
 import { HydratedDocument } from 'mongoose';
+import { ViolationType } from '../constants/violation-type';
 
 @Schema({ timestamps: true, discriminatorKey: 'type' })
 export class Violation {

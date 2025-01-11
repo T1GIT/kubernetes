@@ -1,0 +1,1 @@
+export const REPAIRS_LOG_SERVICE = Symbol('REPAIRS_LOG_SERVICE');

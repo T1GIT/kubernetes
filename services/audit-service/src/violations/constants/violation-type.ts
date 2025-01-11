@@ -1,3 +1,3 @@
 export enum ViolationType {
-  CONFIG = 'config',
+  CONFIG = 'violation-config',
 }

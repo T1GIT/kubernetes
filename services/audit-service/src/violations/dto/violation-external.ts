@@ -1,3 +1,3 @@
-import { ViolationDocument } from '@/violations/schemas/violation.schema';
+import { ViolationDocument } from '../schemas/violation.schema';
 
 export type ViolationExternal = Omit<ViolationDocument, 'type'>;
