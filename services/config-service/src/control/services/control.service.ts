@@ -34,10 +34,10 @@ export class ControlService {
   }
 
   async check(reference: ReferenceDocument): Promise<void> {
-    const content = fs.readFileSync(
-      path.resolve(process.env.ROOT, reference.path),
-      'utf-8',
-    );
+    const pathResolved = path.resolve(process.env.ROOT, reference.path);
+    const content = fs.existsSync(pathResolved)
+      ? fs.readFileSync(pathResolved, 'utf-8')
+      : '';
     const success = content === reference.content;
 
     if (!success) {
@@ -59,10 +59,10 @@ export class ControlService {
   async repair(violation: ViolationDocument): Promise<void> {
     const reference = violation.reference;
 
-    fs.writeFileSync(
-      path.resolve(process.env.ROOT, reference.path),
-      reference.content,
-    );
+    const pathResolved = path.resolve(process.env.ROOT, reference.path);
+    const dirname = path.dirname(pathResolved);
+    fs.mkdirSync(dirname, { recursive: true });
+    fs.writeFileSync(pathResolved, reference.content);
 
     const repair = await this.repairModel.create({
       violation,

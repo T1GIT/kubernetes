@@ -20,8 +20,6 @@ COPY --chown=node:node --from=development /usr/src/app/node_modules ./node_modul
 COPY --chown=node:node . .
 RUN yarn build
 
-
-
 RUN yarn install --production --frozen-lockfile && yarn cache clean
 
 USER node

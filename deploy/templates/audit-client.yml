@@ -17,6 +17,14 @@ spec:
     spec:
       containers:
         - name: audit-client-app
+          image: docker.io/t1mondocker/audit-client
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+        - name: audit-client-proxy
           image: nginx:alpine
           ports:
             - containerPort: 80
@@ -24,18 +32,69 @@ spec:
             requests:
               cpu: 50m
               memory: 256Mi
+          volumeMounts:
+            - name: nginx-config-volume
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-config-volume
+          configMap:
+            name: audit-client-nginx-config
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: audit-client
+  name: audit-client-service
   namespace: security-ns
 spec:
   selector:
     app: audit-client
-  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-client-proxy-service
+  namespace: security-ns
+spec:
+  selector:
+    app: audit-client
   ports:
     - protocol: TCP
       port: 80
       targetPort: 80
-      nodePort: 30080
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: audit-client-nginx-config
+  namespace: security-ns
+data:
+  default.conf: |
+    server {
+        listen 80;
+    
+        location / {
+            proxy_pass http://localhost:8080;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_redirect off;
+            proxy_set_header X-Original-URI $request_uri;
+            proxy_set_header X-Original-Path $uri;
+        }
+
+        location /audit/ {
+            proxy_pass http://audit-service.security-ns:3000/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_redirect off;
+            proxy_set_header X-Original-URI $request_uri;
+            proxy_set_header X-Original-Path $uri;
+        }
+    }
