@@ -1,0 +1,3 @@
+export const VIOLATIONS_NOTIFY_SERVICE = Symbol(
+  'VIOLATIONS_NOTIFY_SERVICE',
+);

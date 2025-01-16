@@ -2,7 +2,7 @@ import { ConsoleLogger, Inject, Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Violation, ViolationDocument } from '../schemas/violation.schema';
-import { ViolationExternal } from '../dto/violation-external';
+import { ViolationExternalDto } from '../dto/violation-external.dto';
 import { ViolationType } from '../constants/violation-type';
 import { ClientProxy } from '@nestjs/microservices';
 import { VIOLATIONS_LOG_SERVICE } from '../constants/injections';
@@ -22,7 +22,7 @@ export class ViolationsService {
   }
 
   async save(
-    external: ViolationExternal,
+    external: ViolationExternalDto,
     type: ViolationType,
   ): Promise<ViolationDocument> {
     const violation = await this.violationModel.create(

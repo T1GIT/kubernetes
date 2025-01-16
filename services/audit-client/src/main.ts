@@ -32,6 +32,14 @@ app
   .use(ToastService)
   .directive('ripple', Ripple)
 
-app.use(VueQueryPlugin)
+app.use(VueQueryPlugin, {
+  queryClientConfig: {
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+      },
+    },
+  },
+})
 
 app.mount('#app')

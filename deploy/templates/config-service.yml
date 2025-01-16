@@ -1,16 +1,5 @@
 # Сервис контроля целостности конфигураций и база данных для эталонных конфигураций.
 # Использует NodeJS приложение и MongoDB для хранения данных.
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: config-pvc
-  namespace: security-ns
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -47,24 +36,15 @@ spec:
             - name: INTERVAL
               value: "10"
             - name: MONGO_HOST
-              value: "config-db-service"
+              value: "config-db-cluster"
             - name: MONGO_PORT
               value: "27017"
             - name: MONGO_NAME
               value: "config-db"
             - name: REDIS_HOST
-              value: "redis-service"
+              value: "redis-cluster"
             - name: REDIS_PORT
               value: "6379"
-        - name: config-db
-          image: mongo:latest
-          volumeMounts:
-            - name: config-db-data
-              mountPath: /data/db
-          resources:
-            requests:
-              cpu: 200m
-              memory: 256Mi
         - name: config-db-express
           image: mongo-express:latest
           resources:
@@ -75,7 +55,7 @@ spec:
             - containerPort: 8081
           env:
             - name: ME_CONFIG_MONGODB_SERVER
-              value: "config-db-service"
+              value: "config-db-cluster"
             - name: ME_CONFIG_MONGODB_PORT
               value: "27017"
             - name: ME_CONFIG_BASICAUTH_USERNAME
@@ -83,13 +63,47 @@ spec:
             - name: ME_CONFIG_BASICAUTH_PASSWORD
               value: "admin"
       volumes:
-        - name: config-db-data
-          persistentVolumeClaim:
-            claimName: config-pvc
         - name: host-config-service
           hostPath:
             path: /host
             type: Directory
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: config-db-set
+  namespace: security-ns
+spec:
+  serviceName: config-db-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: config-db
+  template:
+    metadata:
+      labels:
+        app: config-db
+    spec:
+      containers:
+        - name: config-db
+          image: mongo:latest
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: config-db-data
+              mountPath: /data/db
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: config-db-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
 ---
 apiVersion: v1
 kind: Service
@@ -108,16 +122,31 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: config-db-service
+  name: config-db-headless
   namespace: security-ns
 spec:
   selector:
-    app: config-service
+    app: config-db
+  clusterIP: None
   ports:
     - protocol: TCP
       port: 27017
       targetPort: 27017
       name: mongodb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-db-cluster
+  namespace: security-ns
+spec:
+  selector:
+    app: config-db
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+      name: mongodb-cluster
 ---
 apiVersion: v1
 kind: Service

@@ -2,7 +2,7 @@ import { ConsoleLogger, Inject, Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Repair, RepairDocument } from '../schemas/repair.schema';
-import { RepairExternal } from '../dto/repair-external';
+import { RepairExternalDto } from '../dto/repair-external.dto';
 import * as _ from 'lodash';
 import { REPAIRS_LOG_SERVICE } from '@/repairs/constants/injections';
 import { ClientProxy } from '@nestjs/microservices';
@@ -22,18 +22,18 @@ export class RepairService {
   }
 
   async save(
-    external: RepairExternal,
+    external: RepairExternalDto,
     type: RepairType,
   ): Promise<RepairDocument> {
     const repair = await this.repairModel.create(
       _.defaultsDeep({}, external, { type, violation: { type } }),
     );
 
-    this.client.emit('repair', repair);
-
     this.logger.verbose(
       `Repair of type ${type} received: ${JSON.stringify(external)}`,
     );
+
+    this.client.emit('repair', repair);
 
     return repair;
   }

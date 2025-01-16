@@ -1,7 +1,10 @@
 <script lang="ts" setup>
+import type { RepairDto } from '@/repairs/dto/repair'
 import { repairsApi } from '@/repairs/api/repairs'
+import { SIO_REPAIRS_EVENT } from '@/repairs/const/events'
+import { useSocket } from '@/shared/lib/socket'
 import { FilterMatchMode, FilterOperator } from '@primevue/core'
-import { useElementSize } from '@vueuse/core'
+import { useElementSize, whenever } from '@vueuse/core'
 import dayjs from 'dayjs'
 import Card from 'primevue/card'
 import Chip from 'primevue/chip'
@@ -13,10 +16,16 @@ import Messsage from 'primevue/message'
 import MultiSelect from 'primevue/multiselect'
 import Tag from 'primevue/tag'
 import { computed, ref, shallowRef } from 'vue'
+import { RepairType } from '../const/repair-type'
 
-const { data, loading } = repairsApi.getAll()
+const getAllQuery = repairsApi.getAll()
+const repairs = shallowRef<RepairDto[]>([])
+whenever(() => getAllQuery.data.value, value => repairs.value = value, { immediate: true })
 
-const rowData = computed(() => (data.value ?? []).map(d => ({ ...d, createdAt: new Date(d.createdAt) })))
+const socket = useSocket()
+socket.on(SIO_REPAIRS_EVENT.REPAIR, repair => repairs.value = [repair, ...repairs.value])
+
+const rowData = computed(() => (repairs.value ?? []).map(d => ({ ...d, createdAt: new Date(d.createdAt) })))
 
 const filters = ref({
   _id: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -24,13 +33,15 @@ const filters = ref({
   createdAt: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.DATE_IS }] },
 })
 
-const typeLabel = {
-  'repair-config': 'Конфигурация',
-  'repair-integrity': 'Приложение',
-  'repair-registry': 'Установка',
+const typeLabel: Record<RepairType, string> = {
+  [RepairType.CONFIG]: 'Конфигурация',
+  [RepairType.INTEGRITY]: 'Приложение',
+  [RepairType.REGISTRY]: 'Установка',
 }
-const typeIcon = {
-  'repair-config': 'bi bi-gear-fill',
+const typeIcon: Record<RepairType, string> = {
+  [RepairType.CONFIG]: 'bi bi-gear-fill',
+  [RepairType.INTEGRITY]: 'bi bi-app-indicator',
+  [RepairType.REGISTRY]: 'bi bi-download',
 }
 
 const cardRef = shallowRef()
@@ -51,9 +62,10 @@ const { height } = useElementSize(cardRef)
         filter-display="menu"
         data-key="_id"
         :value="rowData"
-        :loading="loading"
         scrollable
         :scroll-height="`${height}px`"
+        sort-field="createdAt"
+        :sort-order="-1"
         table-class="size-full max-w-full rounded-lg"
       >
         <Column field="_id" header="Идентификатор" :sortable="true">
@@ -63,17 +75,17 @@ const { height } = useElementSize(cardRef)
         </Column>
 
         <Column field="type" header="Тип нарушения" :sortable="true" :show-filter-match-modes="false">
-          <template #body="{ data }">
+          <template #body="{ data }: {data: RepairDto}">
             <Tag severity="warn" :icon="typeIcon[data.type]" :value="typeLabel[data.type]" />
           </template>
 
           <template #filter="{ filterModel }">
-            <MultiSelect v-model="filterModel.value" :options="Object.keys(typeLabel)" :option-label="(d) => typeLabel[d]" placeholder="Фильтр" display="chip" />
+            <MultiSelect v-model="filterModel.value" :options="Object.keys(typeLabel)" :option-label="(d: RepairType) => typeLabel[d]" placeholder="Фильтр" display="chip" />
           </template>
         </Column>
 
         <Column field="createdAt" header="Дата исправления" data-type="date" :sortable="true">
-          <template #body="{ data }">
+          <template #body="{ data }: {data: RepairDto}">
             {{ dayjs(data.createdAt).format('DD MMMM YYYY, HH:mm:ss') }}
           </template>
           <template #filter="{ filterModel }">
@@ -82,13 +94,13 @@ const { height } = useElementSize(cardRef)
         </Column>
 
         <Column field="reference.path" header="Путь конфигурации" :sortable="true">
-          <template #body="{ data }">
+          <template #body="{ data }: {data: RepairDto}">
             <Chip :label="data.violation.reference.path" />
           </template>
         </Column>
 
         <Column field="content" header="Модифицированная конфигурация" :sortable="true">
-          <template #body="{ data }">
+          <template #body="{ data }: {data: RepairDto}">
             <Messsage
               severity="warn"
               :pt="{
@@ -101,7 +113,7 @@ const { height } = useElementSize(cardRef)
         </Column>
 
         <Column field="reference.content" header="Исправленная конфигурация" :sortable="true">
-          <template #body="{ data }">
+          <template #body="{ data }: {data: RepairDto}">
             <Messsage
               severity="success"
               :pt="{

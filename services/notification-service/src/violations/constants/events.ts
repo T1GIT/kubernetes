@@ -1,0 +1,3 @@
+export enum SIO_VIOLATIONS_EVENT {
+  VIOLATION = 'VIOLATION',
+}
